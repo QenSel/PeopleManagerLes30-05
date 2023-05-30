@@ -13,6 +13,7 @@ builder.Services.AddDbContext<PeopleManagerDbContext>(options =>
 });
 
 builder.Services.AddScoped<PersonService>();
+builder.Services.AddScoped<VehiclesService>();
 
 var app = builder.Build();
 

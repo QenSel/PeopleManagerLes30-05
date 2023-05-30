@@ -3,25 +3,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PeopleManager.Ui.Mvc.Core;
 using PeopleManager.Ui.Mvc.Models;
+using PeopleManager.Ui.Mvc.Services;
 
 namespace PeopleManager.Ui.Mvc.Controllers
 {
     public class VehiclesController : Controller
     {
-        private readonly PeopleManagerDbContext _dbContext;
+        private readonly VehiclesService _VehicleServices;
 
-        public VehiclesController(PeopleManagerDbContext dbContext)
+        public VehiclesController(VehiclesService vehiclesService)
         {
-            _dbContext = dbContext;
+            _VehicleServices = vehiclesService;
         }
 
 
         [HttpGet]
         public IActionResult Index()
         {
-            var vehicles = _dbContext.Vehicles
-                .Include(v=>v.ResponsiblePerson)
-                .ToList();
+            var vehicles = _VehicleServices.Find();
 
             return View(vehicles);
         }
@@ -41,9 +40,7 @@ namespace PeopleManager.Ui.Mvc.Controllers
                 return CreateEditView("Create", vehicle);
             }
 
-            _dbContext.Vehicles.Add(vehicle);
-
-            _dbContext.SaveChanges();
+            _VehicleServices.Create(vehicle);
 
             return RedirectToAction("Index");
         }
@@ -51,7 +48,7 @@ namespace PeopleManager.Ui.Mvc.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var vehicle = _dbContext.Vehicles.Find(id);
+            var vehicle = _VehicleServices.Get(id);
 
             if (vehicle is null)
             {
@@ -70,7 +67,7 @@ namespace PeopleManager.Ui.Mvc.Controllers
                 return CreateEditView("Edit", vehicle);
             }
 
-            var dbVehicle = _dbContext.Vehicles.Find(id);
+            var dbVehicle = _VehicleServices.Update(id,vehicle);
             if (dbVehicle is null)
             {
                 return RedirectToAction("Index");
@@ -81,14 +78,14 @@ namespace PeopleManager.Ui.Mvc.Controllers
             dbVehicle.Type = vehicle.Type;
             dbVehicle.ResponsiblePersonId = vehicle.ResponsiblePersonId;
 
-            _dbContext.SaveChanges();
+            
 
             return RedirectToAction("Index");
         }
         
         private IActionResult CreateEditView([AspMvcView]string viewName, Vehicle? vehicle = null)
         {
-            var people = _dbContext.People
+            var people = _VehicleServices.Persons()
                 .OrderBy(p => p.FirstName)
                 .ThenBy(p => p.LastName)
                 .ToList();
@@ -101,7 +98,7 @@ namespace PeopleManager.Ui.Mvc.Controllers
         [HttpGet]
         public IActionResult Delete(int id)
         {
-            var vehicle = _dbContext.Vehicles.Find(id);
+            var vehicle = _VehicleServices.Get(id) ;
 
             if (vehicle is null)
             {
@@ -126,11 +123,7 @@ namespace PeopleManager.Ui.Mvc.Controllers
                 Id = id,
                 LicensePlate = string.Empty
             };
-            _dbContext.Vehicles.Attach(vehicle);
-
-            _dbContext.Vehicles.Remove(vehicle);
-
-            _dbContext.SaveChanges();
+            _VehicleServices.Delete(id);
 
             return RedirectToAction("Index");
         }
